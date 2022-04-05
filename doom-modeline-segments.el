@@ -1363,8 +1363,15 @@ regions, 5. The current/total for the highlight term (with `symbol-overlay'),
   ;; TODO Include other information
   (cond ((eq major-mode 'image-mode)
          (cl-destructuring-bind (width . height)
-           (when (fboundp 'image-size)
-             (image-size (image-get-display-property) :pixels))
+          ;; NOTE sometimes image-get-display-property will return nil for reason I don't know (with Emacs 29)
+          ;; in that case this modeline will cause error below:
+          ;; Error during redisplay: (eval (doom-modeline-segment--media-info)) signaled (error "Invalid image specification") [2 times]
+          ;; which seems bring emacs into perpetual error loop and can never display image properly
+          ;; so to check image-get-display-property return value, this issue now goes away
+           (if (and (fboundp 'image-size) (image-get-display-property))
+             (image-size (image-get-display-property) :pixels)
+             ;; return dummy value in this case, to prevent it going to error loop
+             123 456)
            (propertize
             (format "  %dx%d  " width height)
             'face (if (doom-modeline--active) 'mode-line 'mode-line-inactive))))))
